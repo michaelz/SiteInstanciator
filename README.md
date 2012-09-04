@@ -6,6 +6,8 @@ To launch:
 
 ./siteinstanciator.sh test
 
+You can also launch the script without the sitename, you will be asked to enter it afterwards.
+
 This will create a virtualhost test.localhost (configurable) and a folder in /var/www/htdocs/test (configurable as well).
 
 At the same time, the script can add a database db_sitename (configurable) with the good permissions that you can use with the user db_user (configurable).
