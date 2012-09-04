@@ -94,7 +94,7 @@ echo "</VirtualHost>" >> $A2FILE
 sleep 1
 echo "[OK]"
 echo -n "chmoding and chowning... "
-chown -R www-data:www-data $DEVPATH/$SITENAME
+chown -R $APACHEUSER:$APACHEUSER $DEVPATH/$SITENAME
 chmod -R 775 $DEVPATH/$SITENAME
 echo "[OK]"
 sleep 1
@@ -147,14 +147,14 @@ if [ ! -z `type -P drush` ]; then
     echo "Renaming `echo drupal*` to htdocs"
     mv drupal-* htdocs
     echo "Chowning and chmoding"
-    chown -R www-data:www-data $DEVPATH/$SITENAME
+    chown -R $APACHEUSER:$APACHEUSER $DEVPATH/$SITENAME
     chmod -R g+w $DEVPATH/$SITENAME
     echo "Get into htdocs"
     cd htdocs
-    echo "You are now in `pwd`. Executing drush site-install"
+    echo "You are now in `pwd`. Executing drush site-install."
     echo " "
     drush site-install --db-url=mysql://$DBDEVUSER:$DBDEVPW@$DBDEVHOST/$DBDEVNAME --site-name="$SITENAME"
-    [ -d sites/default/files ] && chown -R www-data:www-data sites/default/files && chmod 777 sites/default/files
+    [ -d sites/default/files ] && chown -R $APACHEUSER:$APACHEUSER sites/default/files && chmod 777 sites/default/files
   fi  
 else
   echo "Drush not installed. Sorry, no drupal installation possible."
