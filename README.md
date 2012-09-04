@@ -6,11 +6,10 @@ To launch:
 
 ./siteinstanciator.sh test
 
-will create a virtualhost test.dev.linalis.com
-and a folder ( in /var/www/dev.linalis.com/htdocs/test )
+This will create a virtualhost test.localhost (configurable) and a folder in /var/www/htdocs/test (configurable as well).
 
-At the same time, the script can add a database linalisdev_sitename with the good permissions that you can use with the user linalis_dev.
+At the same time, the script can add a database db_sitename (configurable) with the good permissions that you can use with the user db_user (configurable).
 You have to know the root password for this step.
 
-NEW: Installation of drupal with drush. Needs drush and the database described above created.
+NEW: Installation of drupal with drush. It therefore needs drush and the database described above.
 
