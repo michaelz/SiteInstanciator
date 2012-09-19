@@ -1,5 +1,7 @@
 #! /bin/bash
 
+
+echo $CONFIGFILE
 # root ?
 if [ "$(whoami)" != "root" ]; then
 	echo "Please run this script as root or with sudo"
@@ -12,9 +14,12 @@ if [ -z $1 ]
  then echo -n "Please enter the site's machine name: " ; read SITENAME
 fi
 
-CONFIGFILE="siteinstanciator.cfg"
+CONFIGFILENAME="siteinstanciator.cfg"
 
-# CONFIGURATION -- Do not edit, use the $CONFIGFILE defined above instead.
+ORIGINALPATH="`readlink -f $0`"
+ORIGINALSCRIPT="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+CONFIGFILE="`echo $ORIGINALPATH | sed -e "s/$ORIGINALSCRIPT/$CONFIGFILENAME/g"`"
+# CONFIGURATION -- Do not edit, use the $CONFIGFILENAME defined above instead.
 
 SERVERHOST="localhost"
 SERVERNAME="$SITENAME.$SERVERHOST"
@@ -34,6 +39,11 @@ DBDEVPW=""
 DBDEVPREFIX="db_"
 DBDEVNAME="$DBDEVPREFIX$SITENAME"
 
+DRUPALUSER="admin"
+
+MAILSUBJECT="New site on $SERVERNAME"
+MAILMESSAGE="/tmp/SiteInstanciatoremailmessage.txt"
+
 
 
 
@@ -49,12 +59,12 @@ if [ -f $CONFIGFILE ]; then
   echo ".. [OK]"
   echo " "
 fi
-echo "This script will create a new site called $SERVERNAME. Please check this configuration before continuing:"
-echo "Install path: $DEVPATH/$SITENAME"
-echo "Servername: $SERVERNAME"
+echo "This script will create a new site called $SERVERNAME. Please check this configuration before continuing:\n"
+echo "Install path: $DEVPATH/$SITENAME" | tee -a $MAILMESSAGE
+echo "Servername: $SERVERNAME" | tee -a $MAILMESSAGE
 echo "Serveradmin: $SERVERADMIN"
-echo "Apache2 virtual host: $A2VIRTUALHOST"
-echo "Apache2 virtualhost file: $A2FILE"
+echo "Apache2 virtual host: $A2VIRTUALHOST" 
+echo "Apache2 virtualhost file: $A2FILE" | tee -a $MAILMESSAGE
 echo "Log folder: $LOGPATH"
 echo " " 
 echo -n "Do you want to proceed (y/N)? "
@@ -75,6 +85,7 @@ echo " "
 echo -n "Setting up apache... "
 
 # Setting up apache file
+touch $A2FILE
 echo " <VirtualHost $A2VIRTUALHOST:80>" >> $A2FILE
 echo "	ServerAdmin $SERVERADMIN" >> $A2FILE
 echo "	ServerName $SERVERNAME" >> $A2FILE
@@ -88,22 +99,22 @@ echo "     Allow from all " >> $A2FILE
 echo "  </Directory>" >> $A2FILE
 echo " " >> $A2FILE
 echo "  ErrorLog $A2ERRORLOG" >> $A2FILE
-echo "  TransferLog $A2TRANSFERLOG >> $A2FILE "
+echo "  TransferLog $A2TRANSFERLOG" >> $A2FILE
 echo " " >> $A2FILE
 echo "</VirtualHost>" >> $A2FILE
+a2ensite $SERVERNAME
 sleep 1
-echo "[OK]"
+echo " .. [OK]"
 echo -n "chmoding and chowning... "
 chown -R $APACHEUSER:$APACHEUSER $DEVPATH/$SITENAME
 chmod -R 775 $DEVPATH/$SITENAME
-echo "[OK]"
 sleep 1
-echo "All done. You should restart the apache2 server to enable the virtualhost. To disable all the dev sites, a2dissite $A2FILE."
+echo ".. [OK]"
+echo " "
+echo "All done. To disable this site, type a2dissite $A2FILE."
 echo "Your webfolder is accessible here : $DEVPATH/$SITENAME/htdocs."
 echo " "
-sleep 1
 echo "This will create a local database $DBDEVNAME (You must know your root password)"
-sleep 1
 echo -n "Do you want to proceed ? (y/N) "
 read answer
 if test "$answer" != "Y" -a "$answer" != "y";
@@ -121,11 +132,12 @@ fi
 mysql -u root -p$MYSQLPASS -e "GRANT ALL PRIVILEGES ON $DBDEVNAME.* to '$DBDEVUSER'@'$DBDEVHOST'" && echo "[OK]" || exit 0
 echo " "
 sleep 1
-echo "Your database information:"
-echo "database : $DBDEVNAME"
-echo "user : $DBDEVUSER"
-echo "host : $DBDEVHOST"
-echo "password : $DBDEVPW"
+echo " " | tee -a $MAILMESSAGE
+echo "Your database information:" | tee -a $MAILMESSAGE
+echo "database : $DBDEVNAME" | tee -a $MAILMESSAGE
+echo "user : $DBDEVUSER" | tee -a $MAILMESSAGE
+echo "host : $DBDEVHOST" | tee -a $MAILMESSAGE
+echo "password : $DBDEVPW" | tee -a $MAILMESSAGE
 echo " "
 sleep 1
 echo "Testing if drush is installed"
@@ -138,7 +150,7 @@ if [ ! -z `type -P drush` ]; then
   fi
   echo "Downloading Drupal..."
   cd $DEVPATH/$SITENAME
-  drush dl
+  drush  dl
   echo "Deleting existing htdocs"
   rmdir htdocs
   if [ -d htdocs ]; then 
@@ -152,11 +164,26 @@ if [ ! -z `type -P drush` ]; then
     echo "Get into htdocs"
     cd htdocs
     echo "You are now in `pwd`. Executing drush site-install."
-    echo " "
-    drush site-install --db-url=mysql://$DBDEVUSER:$DBDEVPW@$DBDEVHOST/$DBDEVNAME --site-name="$SITENAME"
+    echo " " >> $MAILMESSAGE
+    drush -p site-install --account-name=$DRUPALUSER --db-url=mysql://$DBDEVUSER:$DBDEVPW@$DBDEVHOST/$DBDEVNAME --site-name="$SITENAME"
     [ -d sites/default/files ] && chown -R $APACHEUSER:$APACHEUSER sites/default/files && chmod 777 sites/default/files
+    echo "You can access your site here, once Apache has reloaded." | tee -a $MAILMESSAGE
+    echo " " | tee -a $MAILMESSAGE
+    echo "http://$SERVERNAME" | tee -a $MAILMESSAGE 
+    echo " " | tee -a $MAILMESSAGE
+    echo "To set your admin password, click this unique link:" | tee -a $MAILMESSAGE
+    drush uli $DRUPALUSER | sed s/default/$SERVERNAME/1 | tee -a $MAILMESSAGE
   fi  
 else
   echo "Drush not installed. Sorry, no drupal installation possible."
 fi
+# send an email using /bin/mail
+if [ ! -z `type -P mail` ]; then
+  echo -n "Enter your mail if you want to receive a summary of this installation: "
+  read MAILADDRESS
+  if [ -n $MAILADDRESS ]; then
+    mail -s "$MAILSUBJECT" "$MAILADDRESS" < $MAILMESSAGE && echo "Email sent."
+  fi
+fi
+rm $MAILMESSAGE
 echo "All Done ! Bye."
