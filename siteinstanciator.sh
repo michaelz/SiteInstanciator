@@ -1,7 +1,4 @@
 #! /bin/bash
-
-
-echo $CONFIGFILE
 # root ?
 if [ "$(whoami)" != "root" ]; then
 	echo "Please run this script as root or with sudo"
@@ -168,7 +165,6 @@ if [ ! -z `type -P drush` ]; then
     drush -p site-install --account-name=$DRUPALUSER --db-url=mysql://$DBDEVUSER:$DBDEVPW@$DBDEVHOST/$DBDEVNAME --site-name="$SITENAME"
     [ -d sites/default/files ] && chown -R $APACHEUSER:$APACHEUSER sites/default/files && chmod 777 sites/default/files
     echo "You can access your site here, once Apache has reloaded." | tee -a $MAILMESSAGE
-    echo " " | tee -a $MAILMESSAGE
     echo "http://$SERVERNAME" | tee -a $MAILMESSAGE 
     echo " " | tee -a $MAILMESSAGE
     echo "To set your admin password, click this unique link:" | tee -a $MAILMESSAGE
