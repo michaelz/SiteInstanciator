@@ -2,7 +2,7 @@ SiteInstanciator.sh
 
 Requires : Linux (tested on Debian and Ubuntu), Apache2, MySQL, drush.
 
-This script should do 4 things:
+This script should do 5 things:
 
   1) Creates folders in configurable paths for the new website directory and the logs
 
@@ -11,7 +11,9 @@ This script should do 4 things:
   3) Creates a new database with a configurable prefix (e.g. db_ ), if necessary, using the same database user (defined in the configuration file).
    You have to know the MYSQL root password for this step.
 
-  4) Installs Drupal, if drush is installed and working, using the previouly defined folders and database.
+  4) Installs Drupal, if drush is installed and working, using the previouly defined folders and database. NEW: with drush uli, adds a link to create an admin password directly on the site
+
+  5) NEW: Sends mail with a summary
 
 To set up the configuration, copy siteinstanciator_default.cfg to siteinstanciator.cfg and change your configuration.
 
