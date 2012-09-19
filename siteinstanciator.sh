@@ -59,7 +59,7 @@ if [ -f $CONFIGFILE ]; then
   echo ".. [OK]"
   echo " "
 fi
-echo "This script will create a new site called $SERVERNAME. Please check this configuration before continuing:\n"
+echo "This script will create a new site called $SERVERNAME. Please check this configuration before continuing:"
 echo "Install path: $DEVPATH/$SITENAME" | tee -a $MAILMESSAGE
 echo "Servername: $SERVERNAME" | tee -a $MAILMESSAGE
 echo "Serveradmin: $SERVERADMIN"
